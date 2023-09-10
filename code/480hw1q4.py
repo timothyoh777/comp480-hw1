@@ -1,5 +1,7 @@
 import math
 import random
+import csv
+import pandas as pd
 from bitarray import bitarray
 from sklearn.utils import murmurhash3_32
 
@@ -8,7 +10,7 @@ from sklearn.utils import murmurhash3_32
 """
 
 # m is the desired hash table size
-def hash_function_factory(m, seed):
+def hash_function_factory(m, seed=0):
     def hash_function(key):
         return murmurhash3_32(key, seed=seed, positive=True) % m
     return hash_function
@@ -131,7 +133,7 @@ def evaluate_bloom_filter(membership_list, test_list_not_in_membership, test_lis
 
     return false_positives, false_negatives
 
-def main():
+def calculate_warmup_false_positives():
     false_positive_rates = [0.01, 0.001, 0.0001]
 
     for rate in false_positive_rates:
@@ -143,5 +145,21 @@ def main():
         print(f"False negatives: {false_negatives}")
         print(f"False negative rate: {false_negatives / 1000}")
 
-if __name__ == "__main__":
-    main()
+
+
+
+"""
+4.2
+
+Sample 1000 urls from urllist as the test set and 1000 random strings as false urls. Report the false
+positive rate and memory usage of your design of bloom filter. Plot the false positive rate with
+memory by varying R. (use k=0.7R/N, N=377871 in this dataset).(
+"""
+data = pd.read_csv("user-ct-test-collection-01.txt", sep="\t")
+urllist = data.ClickURL.dropna().unique()
+
+
+# driver code
+# if __name__ == "__main__":
+#    calculate_warmup_false_positives()
+#    print("\n")
