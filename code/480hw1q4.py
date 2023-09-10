@@ -1,8 +1,10 @@
 import math
 import random
-import csv
+import string
+import sys
 import pandas as pd
 from bitarray import bitarray
+import matplotlib.pyplot as plt
 from sklearn.utils import murmurhash3_32
 
 """
@@ -56,13 +58,13 @@ def round_up_to_power_of_two(num):
     return rounded_num
 
 class BloomFilter:
-    def __init__(self, n, fp_rate):
+    def __init__(self, n, fp_rate=None, r=None):
         # number of expected items to store
         self.n = n
         # calculate k 
-        self.k = int(math.log(fp_rate, 0.618) * math.log(2))
+        self.k = (0.7 * r) // self.n if r else int(math.log(fp_rate, 0.618) * math.log(2))
         # calculate bitarray size
-        self.r = round_up_to_power_of_two(int(math.log(fp_rate, 0.618) * self.n))
+        self.r = r if r else round_up_to_power_of_two(int(math.log(fp_rate, 0.618) * self.n))
 
         self.hash_array = bitarray(self.r)
         self.hash_array.setall(0)
@@ -71,8 +73,8 @@ class BloomFilter:
         # in order to make this experiement reproducible, for k different independent hash functions we 
         # iterate k times from 0 => k * 5 in increments of 5 to have constant but different murmur hash seeds
         self.hash_functions = []
-        for seed in range(0, self.k * 5, 5):
-            generated_function = hash_function_factory(self.r, seed)
+        for seed in range(0, int(self.k) * 5, 5):
+            generated_function = hash_function_factory(self.r, int(seed))
             self.hash_functions.append(generated_function)
 
     def insert(self, key) -> None:
@@ -115,9 +117,7 @@ membership_list = list(membership_set)
 test_list_from_membership = test_set_from_membership
 test_list_not_in_membership = list(test_set_not_in_membership)
 
-def evaluate_bloom_filter(membership_list, test_list_not_in_membership, test_list_from_membership, false_positive_rate):
-    bloom_filter = BloomFilter(10000, false_positive_rate)
-    
+def evaluate_bloom_filter(membership_list, test_list_not_in_membership, test_list_from_membership, bloom_filter):
     for key in membership_list:
         bloom_filter.insert(key)
 
@@ -137,15 +137,14 @@ def calculate_warmup_false_positives():
     false_positive_rates = [0.01, 0.001, 0.0001]
 
     for rate in false_positive_rates:
-        false_positives, false_negatives = evaluate_bloom_filter(membership_list, test_list_not_in_membership, test_list_from_membership, rate)
+        bloom_filter = BloomFilter(rate, 10000)
+        false_positives, false_negatives = evaluate_bloom_filter(membership_list, test_list_not_in_membership, test_list_from_membership, bloom_filter)
         
         print(f"{rate} FALSE POSITIVE RATE")
         print(f"False positives: {false_positives}")
         print(f"False positive rate: {false_positives / 1000}")
         print(f"False negatives: {false_negatives}")
         print(f"False negative rate: {false_negatives / 1000}")
-
-
 
 
 """
@@ -155,11 +154,64 @@ Sample 1000 urls from urllist as the test set and 1000 random strings as false u
 positive rate and memory usage of your design of bloom filter. Plot the false positive rate with
 memory by varying R. (use k=0.7R/N, N=377871 in this dataset).(
 """
+
 data = pd.read_csv("user-ct-test-collection-01.txt", sep="\t")
 urllist = data.ClickURL.dropna().unique()
 
+# helper function to generate random strings
+def random_string(length):
+    # Define the characters from which to generate the string
+    characters = string.ascii_letters + string.digits  # You can customize this further
+    
+    # Use random.choices to generate a random string of the specified length
+    random_string = ''.join(random.choice(characters) for _ in range(length))
+    
+    return random_string
+
+
+url_in_urllist = random.sample(list(urllist), 100)
+url_not_in_urllist = [random_string(random.randint(10, 50)) for _ in range(1000)]
+
+# Create a map to hold onto false positive counts per K (bit array size)
+false_positive_rates = {}
+
+# We iterate until 2^24 size hash table => 2**23 is size of bit array for 377871 insertions to
+# have a false positive rate of 0.001 
+bit_array_size = 2
+while bit_array_size <= 2**24:
+    bloom_filter = BloomFilter(n=377871, r=bit_array_size)
+    python_hashset = set()
+
+    for url in urllist:
+        bloom_filter.insert(url)
+        python_hashset.add(url)
+
+
+    false_positives, false_negatives = evaluate_bloom_filter(urllist, url_not_in_urllist, url_in_urllist, bloom_filter)
+    false_positive_rates[bit_array_size] = false_positives / 1000
+
+    bloom_filter_memory_usage = sys.getsizeof(bloom_filter)
+    python_memory_usage = sys.getsizeof(python_hashset)
+
+    bit_array_size *= 2
+
+def show_false_positive_per_bit_array():
+    # Extract keys (bit array sizes) and values (false positive rates)
+    sizes = list(false_positive_rates.keys())
+    rates = list(false_positive_rates.values())
+
+    # Create a plot
+    plt.figure(figsize=(10, 6))
+    plt.plot(sizes, rates, marker='o', linestyle='-')
+    plt.title('False Positive Rates vs. Bit Array Size (K)')
+    plt.xlabel('Bit Array Size (K)')
+    plt.ylabel('False Positive Rate')
+    plt.grid(True)
+    # Show the plot
+    plt.show()
 
 # driver code
-# if __name__ == "__main__":
-#    calculate_warmup_false_positives()
-#    print("\n")
+if __name__ == "__main__":
+   calculate_warmup_false_positives()
+   print("\n")
+   show_false_positive_per_bit_array()
