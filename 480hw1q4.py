@@ -53,7 +53,7 @@ def round_up_to_power_of_two(num):
     rounded_num = 1 << msb_position
     return rounded_num
 
-class BloomFiter:
+class BloomFilter:
     def __init__(self, n, fp_rate):
         # number of expected items to store
         self.n = n
@@ -113,77 +113,35 @@ membership_list = list(membership_set)
 test_list_from_membership = test_set_from_membership
 test_list_not_in_membership = list(test_set_not_in_membership)
 
+def evaluate_bloom_filter(membership_list, test_list_not_in_membership, test_list_from_membership, false_positive_rate):
+    bloom_filter = BloomFilter(10000, false_positive_rate)
+    
+    for key in membership_list:
+        bloom_filter.insert(key)
 
-# 0.01 false positive rate
-one_hundreth_filter = BloomFiter(10000, 0.01)
-for key in membership_list:
-    one_hundreth_filter.insert(key)
+    false_positives = 0
+    for key in test_list_not_in_membership:
+        if bloom_filter.test(key):
+            false_positives += 1
 
-# count how many false positives we have
-false_positives = 0
-for key in test_list_not_in_membership:
-    if one_hundreth_filter.test(key):
-        false_positives += 1
+    false_negatives = 0
+    for key in test_list_from_membership:
+        if not bloom_filter.test(key):
+            false_negatives += 1
 
-# count how mnay false negatives we have
-false_negatives = 0
-for key in test_list_from_membership:
-    if not one_hundreth_filter.test(key):
-        false_negatives += 1
+    return false_positives, false_negatives
 
-# print false positives and false negatives
-print("0.01 FALSE POSITIVE RATE")
-print(f"False positives: {false_positives}")
-print(f"False positive rate: {false_positives/1000}")
-print(f"False negatives: {false_negatives}")
-print(f"False negative rate: {false_negatives/1000}")
+def main():
+    false_positive_rates = [0.01, 0.001, 0.0001]
 
+    for rate in false_positive_rates:
+        false_positives, false_negatives = evaluate_bloom_filter(membership_list, test_list_not_in_membership, test_list_from_membership, rate)
+        
+        print(f"{rate} FALSE POSITIVE RATE")
+        print(f"False positives: {false_positives}")
+        print(f"False positive rate: {false_positives / 1000}")
+        print(f"False negatives: {false_negatives}")
+        print(f"False negative rate: {false_negatives / 1000}")
 
-# 0.001 false positive rate
-one_hundreth_filter = BloomFiter(10000, 0.001)
-for key in membership_list:
-    one_hundreth_filter.insert(key)
-
-# count how many false positives we have
-false_positives = 0
-for key in test_list_not_in_membership:
-    if one_hundreth_filter.test(key):
-        false_positives += 1
-
-# count how mnay false negatives we have
-false_negatives = 0
-for key in test_list_from_membership:
-    if not one_hundreth_filter.test(key):
-        false_negatives += 1
-
-# print false positives and false negatives
-print("0.001 FALSE POSITIVE RATE")
-print(f"False positives: {false_positives}")
-print(f"False positive rate: {false_positives/1000}")
-print(f"False negatives: {false_negatives}")
-print(f"False negative rate: {false_negatives/1000}")
-
-
-# 0.0001 false positive rate
-one_hundreth_filter = BloomFiter(10000, 0.0001)
-for key in membership_list:
-    one_hundreth_filter.insert(key)
-
-# count how many false positives we have
-false_positives = 0
-for key in test_list_not_in_membership:
-    if one_hundreth_filter.test(key):
-        false_positives += 1
-
-# count how mnay false negatives we have
-false_negatives = 0
-for key in test_list_from_membership:
-    if not one_hundreth_filter.test(key):
-        false_negatives += 1
-
-# print false positives and false negatives
-print("0.0001 FALSE POSITIVE RATE")
-print(f"False positives: {false_positives}")
-print(f"False positive rate: {false_positives/1000}")
-print(f"False negatives: {false_negatives}")
-print(f"False negative rate: {false_negatives/1000}")
+if __name__ == "__main__":
+    main()
