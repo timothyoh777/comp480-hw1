@@ -3,8 +3,12 @@ import random
 import string
 import sys
 import pandas as pd
-from bitarray import bitarray
+import numpy as np
 import matplotlib.pyplot as plt
+
+
+from prettytable import PrettyTable
+from bitarray import bitarray
 from sklearn.utils import murmurhash3_32
 
 """
@@ -137,7 +141,7 @@ def calculate_warmup_false_positives():
     false_positive_rates = [0.01, 0.001, 0.0001]
 
     for rate in false_positive_rates:
-        bloom_filter = BloomFilter(rate, 10000)
+        bloom_filter = BloomFilter(fp_rate=rate, n=10000)
         false_positives, false_negatives = evaluate_bloom_filter(membership_list, test_list_not_in_membership, test_list_from_membership, bloom_filter)
         
         print(f"{rate} FALSE POSITIVE RATE")
@@ -145,7 +149,6 @@ def calculate_warmup_false_positives():
         print(f"False positive rate: {false_positives / 1000}")
         print(f"False negatives: {false_negatives}")
         print(f"False negative rate: {false_negatives / 1000}")
-
 
 """
 4.2
@@ -175,6 +178,11 @@ url_not_in_urllist = [random_string(random.randint(10, 50)) for _ in range(1000)
 # Create a map to hold onto false positive counts per K (bit array size)
 false_positive_rates = {}
 
+# Create arrays to hold onto memory sizes
+bit_array_sizes = []  # Store bit array sizes
+bloom_filter_memory = []  # Store Bloom filter memory usage
+python_hashset_memory = []  # Store Python hash set memory usage
+
 # We iterate until 2^24 size hash table => 2**23 is size of bit array for 377871 insertions to
 # have a false positive rate of 0.001 
 bit_array_size = 2
@@ -193,6 +201,10 @@ while bit_array_size <= 2**24:
     bloom_filter_memory_usage = sys.getsizeof(bloom_filter)
     python_memory_usage = sys.getsizeof(python_hashset)
 
+    bit_array_sizes.append(bit_array_size)
+    bloom_filter_memory.append(bloom_filter_memory_usage)
+    python_hashset_memory.append(python_memory_usage)
+
     bit_array_size *= 2
 
 def show_false_positive_per_bit_array():
@@ -210,8 +222,23 @@ def show_false_positive_per_bit_array():
     # Show the plot
     plt.show()
 
+def show_memory_usage():
+    # Create a table
+    table = PrettyTable()
+    table.field_names = ["Bit Array Sizes", "Bloom Filter Memory (MB)", "Python HashSet Memory (MB)"]
+
+    # Add data to the table
+    for size, bloom, python in zip(bit_array_sizes, bloom_filter_memory, python_hashset_memory):
+        table.add_row([size, bloom, python])
+
+    # Display the table
+    print(table)
+
+
+
 # driver code
 if __name__ == "__main__":
    calculate_warmup_false_positives()
    print("\n")
    show_false_positive_per_bit_array()
+   show_memory_usage()
