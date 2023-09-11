@@ -40,7 +40,6 @@ R = log_(0.618)(f) * N
 N = R / log_(0.618)(f) (given)
 
 then, we want k independent hash function that hash to a bit array of size R for N items
-
 """
 
 # We want our bit array ranges to be a power of two. therefore, given a calculated range R, we want to round up to the nearest power of two
@@ -154,7 +153,7 @@ def calculate_warmup_false_positives():
 
 Sample 1000 urls from urllist as the test set and 1000 random strings as false urls. Report the false
 positive rate and memory usage of your design of bloom filter. Plot the false positive rate with
-memory by varying R. (use k=0.7R/N, N=377871 in this dataset).(
+memory by varying R. (use k=0.7R/N, N=377871 in this dataset).
 """
 
 data = pd.read_csv("user-ct-test-collection-01.txt", sep="\t")
@@ -224,7 +223,7 @@ def show_false_positive_per_bit_array():
 def show_memory_usage():
     # Create a table
     table = PrettyTable()
-    table.field_names = ["Bit Array Sizes", "Bloom Filter Memory (MB)", "Python HashSet Memory (MB)"]
+    table.field_names = ["Bit Array Sizes", "Bloom Filter Memory (bytes)", "Python HashSet Memory (bytes)"]
 
     # Add data to the table
     for size, bloom, python in zip(bit_array_sizes, bloom_filter_memory, python_hashset_memory):
