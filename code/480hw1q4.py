@@ -191,13 +191,11 @@ while bit_array_size <= 2**24:
     for url in urllist:
         bloom_filter.insert(url)
         python_hashset.add(url)
-
+    bloom_filter_memory_usage = sys.getsizeof(bloom_filter)
+    python_memory_usage = sys.getsizeof(python_hashset)
 
     false_positives, false_negatives = evaluate_bloom_filter(urllist, url_not_in_urllist, url_in_urllist, bloom_filter)
     false_positive_rates[bit_array_size] = false_positives / 1000
-
-    bloom_filter_memory_usage = sys.getsizeof(bloom_filter)
-    python_memory_usage = sys.getsizeof(python_hashset)
 
     bit_array_sizes.append(bit_array_size)
     bloom_filter_memory.append(bloom_filter_memory_usage)
@@ -213,8 +211,8 @@ def show_false_positive_per_bit_array():
     # Create a plot
     plt.figure(figsize=(10, 6))
     plt.plot(sizes, rates, marker='o', linestyle='-')
-    plt.title('False Positive Rates vs. Bit Array Size (K)')
-    plt.xlabel('Bit Array Size (K)')
+    plt.title('False Positive Rates vs. Bit Array Size (R)')
+    plt.xlabel('Bit Array Size (R)')
     plt.ylabel('False Positive Rate')
     plt.grid(True)
     # Show the plot
