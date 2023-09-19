@@ -144,9 +144,9 @@ def calculate_warmup_false_positives():
         
         print(f"{rate} FALSE POSITIVE RATE")
         print(f"False positives: {false_positives}")
-        print(f"False positive rate: {false_positives / 1000}")
+        print(f"False positive rate: {round(false_positives / 1000,10)}")
         print(f"False negatives: {false_negatives}")
-        print(f"False negative rate: {false_negatives / 1000}")
+        print(f"False negative rate: {round(false_negatives / 1000, 10)}")
 
 """
 4.2
@@ -191,7 +191,7 @@ while bit_array_size <= 2**24:
     for url in urllist:
         bloom_filter.insert(url)
         python_hashset.add(url)
-    bloom_filter_memory_usage = sys.getsizeof(bloom_filter)
+    bloom_filter_memory_usage = sys.getsizeof(bloom_filter.hash_array)
     python_memory_usage = sys.getsizeof(python_hashset)
 
     false_positives, false_negatives = evaluate_bloom_filter(urllist, url_not_in_urllist, url_in_urllist, bloom_filter)
